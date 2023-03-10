@@ -4,37 +4,35 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 import numpy as np
-#Assigning Path
-path_output = r'C:\Users\PutuAndika\OneDrive - Migo\Desktop\Web Scraping\Rumah\Combined'
 #Reading File
-df = pd.read_excel(os.path.join(path_output, 'Cleaned V2.xlsx'))
+df = pd.read_excel('House_Price.xlsx')
 df.head()
-df.shape
-df.Place_Name.duplicated().sum()
-df = df.drop_duplicates(subset = ['Place_Name'])
-df.shape
+#Checking Duplicated Values
+for i in df.columns:
+    duplicate = df[i].duplicated().sum()
+    print(f'Number of Duplicate Values in column {i}: {duplicate}')
 df = df[['Place_Name', 'Bedroom','Price (in Million)', 'Kecamatan', 'Kota','Area (m2)',
        'Price per Area', 'Date Posted', 'Month', 'Year']]
 df = df.sort_values(by = ['Date Posted'], ascending= True)
-#Finding Number of House on Sale
-group_city = df.groupby(['Kota'])['Price (in Million)'].count().reset_index().rename(columns = {'Price (in Million)':'Number of House'})\
+#Finding Number of House on Sale by City
+group_city = df.groupby(['Kota'])['Price (in Million)'].nunique().reset_index().rename(columns = {'Price (in Million)':'Number of House'})\
     .sort_values(by = ['Number of House'], ascending=False)
-px.bar(group_city, x = 'Kota', y ='Number of House', title = 'Number of House by City')
+px.bar(group_city, x = 'Kota', y ='Number of House', title = 'Number of House by City', labels={'Kota':'City'})
 #Number of House Sold by Year
 group_year = df.groupby(['Year'])['Place_Name'].count().reset_index().rename(columns={'Place_Name':'Number of House'})
-px.line(group_year, x = 'Year', y='Number of House')
-#Category by Year
+px.line(group_year, x = 'Year', y='Number of House', title='Number of House on Sale by Year')
 #The Median House Price Trend
 df_year = df.groupby(['Year'])['Price (in Million)'].median().reset_index().rename(columns={'Price (in Million)':'Median of House Price'})
 px.line(df_year, x = 'Year', y = 'Median of House Price', title= 'Median of House Price Each Year')
-Median of House Price Each City by Year
+#Median of House Price Each City by Year
 pivot = df.pivot_table(index='Year', values='Price (in Million)', columns='Kota', aggfunc='median').reset_index()
-px.bar(pivot, x = 'Year', y=df.Kota.unique().tolist(), title='House Price Median by City per Year')
-2022 Analysis
+px.bar(pivot, x = 'Year', y=df.Kota.unique().tolist(), title='House Price Median by City per Year', labels={'value':'Number of House'})
+#2022 Analysis
 df_2022_group = df[df.Year == 2022].groupby(['Kota'])['Price (in Million)'].median().reset_index()\
     .rename(columns={'Price (in Million)':'House Price Median'}).sort_values(by = ['House Price Median'], ascending=False)
 
-px.bar(df_2022_group, x = 'Kota', y = 'House Price Median', labels= {'House Price Median':'Median (in Million)'}, 
+px.bar(df_2022_group, x = 'Kota', y = 'House Price Median', labels= {'House Price Median':'Median (in Million)',
+                                                                     'Kota':'City'}, 
        title = 'House Price Median by City in 2022')
 #Analyzing Area
 #Checking the area by each Year
@@ -52,8 +50,7 @@ px.bar(city_price_area, x= 'Kota', y='Price per Area', title='Median of House Pr
 Number of Bedroom
 #Finding Number of Bedroom in Each City
 df_bedroom = df.groupby(['Kota'])['Bedroom'].mean().reset_index().sort_values(by = ['Bedroom'], ascending=False)
-px.bar(df_bedroom, x='Kota', y='Bedroom', title='Number of Bedroom of House in City')
-Correlation
+px.bar(df_bedroom, x='Kota', y='Bedroom', title='Number of Bedroom of House in City', labels={'Bedroom':'Number of Bedroom'})
 #Correlation of Area and Price
 px.scatter(df, x = 'Area (m2)', y= 'Price (in Million)', color='Kota', title = 'Area x Price (in Million)')
 #Correlation of Number of Bedroom and Price
@@ -64,7 +61,6 @@ plt.title('Correlation Values')
 heatmap = sns.heatmap(corr, vmin=-1, vmax=1, annot = True,cmap='BrBG')
 #Distribution of Data
 px.histogram(df['Price (in Million)'], title='Distribution of Price')
-
 #Distribution of Bedroom
 px.histogram(df['Bedroom'], title='Distribution of Bedroom')
 #Price Box
@@ -131,7 +127,6 @@ df_capped = df[['Price (in Million)', 'Area (m2)', 'Price per Area', 'Bedroom']]
 corr_capped = df_capped.corr()
 plt.title('Correlation After Capping')
 heatmap_capped = sns.heatmap(corr_capped, vmin=-1, vmax=1, annot = True,cmap='BrBG')
-Removing Outliers
 #Removing outliers
 df_cleaned = df[(df['Price (in Million)']<upper_limit_price) & (df['Price (in Million)']>lower_limit_price) & (df['Bedroom']<upper_limit_bedroom)
                 & (df['Bedroom']>lower_limit_bedroom) & (df['Area (m2)']<upper_limit_area) & (df['Price (in Million)']>lower_limit_area) &
